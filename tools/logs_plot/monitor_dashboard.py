@@ -122,7 +122,7 @@ def build_plotly_figure(signal_df, measure, height=300):
 
 
 def main():
-    st.title("👶 RP2040 Environmental Sensor Monitor")
+    st.title("👶 Emilio's Environmental Sensor Monitor")
 
     # --- SIDEBAR CONTROLS ---
     st.sidebar.header("⚙️ Dashboard Controls")
