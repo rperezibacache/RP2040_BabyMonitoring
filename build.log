@@ -1,0 +1,405 @@
+cd build && cmake .. \
+	-DPICO_SDK_PATH=/home/ricardo/pico-sdk \
+	-DFREERTOS_KERNEL_PATH=/home/ricardo/FreeRTOS-Kernel \
+	-DCMAKE_BUILD_TYPE=Release
+PICO_SDK_PATH is /home/ricardo/pico-sdk
+Defaulting platform (PICO_PLATFORM) to 'rp2040' since not specified.
+Defaulting target board (PICO_BOARD) to 'pico' since not specified.
+Using board configuration from /home/ricardo/pico-sdk/src/boards/include/boards/pico.h
+Pico Platform (PICO_PLATFORM) is 'rp2040'.
+Defaulting compiler (PICO_COMPILER) to 'pico_arm_cortex_m0plus_gcc' since not specified or detected.
+Configuring toolchain based on PICO_COMPILER 'pico_arm_cortex_m0plus_gcc'
+-- FreeRTOS-Kernel found at: /home/ricardo/FreeRTOS-Kernel
+Defaulting PICO_GCC_TRIPLE to 'arm-none-eabi'
+-- The C compiler identification is GNU 13.2.1
+-- The CXX compiler identification is GNU 13.2.1
+-- The ASM compiler identification is GNU
+-- Found assembler: /usr/bin/arm-none-eabi-gcc
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/arm-none-eabi-gcc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/arm-none-eabi-g++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+Build type is Release
+-- Found Python3: /usr/bin/python3 (found version "3.12.3") found components: Interpreter 
+-- Detected native TLS (__aeabi_read_tp)
+TinyUSB available at /home/ricardo/pico-sdk/lib/tinyusb/hw/bsp/rp2040; enabling build support for USB.
+BTstack available at /home/ricardo/pico-sdk/lib/btstack
+cyw43-driver available at /home/ricardo/pico-sdk/lib/cyw43-driver
+mbedtls available at /home/ricardo/pico-sdk/lib/mbedtls
+lwIP available at /home/ricardo/pico-sdk/lib/lwip
+C library type is newlib
+CMake Warning at /home/ricardo/pico-sdk/tools/Findpicotool.cmake:30 (message):
+  No installed picotool with version 2.3.0 found - building from source
+
+  It is recommended to build and install picotool separately, or to set
+  PICOTOOL_FETCH_FROM_GIT_PATH to a common directory for all your SDK
+  projects
+Call Stack (most recent call first):
+  /home/ricardo/pico-sdk/tools/CMakeLists.txt:180 (find_package)
+  /home/ricardo/pico-sdk/tools/CMakeLists.txt:712 (pico_init_picotool)
+  /home/ricardo/pico-sdk/src/cmake/on_device.cmake:81 (picotool_postprocess_binary)
+  CMakeLists.txt:31 (pico_add_extra_outputs)
+
+
+Downloading Picotool
+Using picotool from /home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool/picotool
+-- Configuring done (2.3s)
+-- Generating done (0.1s)
+-- Build files have been written to: /home/ricardo/Documents/Personal/T_H_LCD_rp2040/build
+make -C build -j16
+make[1]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build'
+make[2]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build'
+make[3]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build'
+make[3]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build'
+make[3]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build'
+make[3]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build'
+make[3]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build'
+make[3]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build'
+make[3]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build'
+[  1%] Building ASM object pico-sdk/src/rp2040/boot_stage2/CMakeFiles/bs2_default.dir/compile_time_choice.S.o
+[  1%] Built target picotoolForceReconfigure
+make[3]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build'
+[  1%] Linking ASM executable bs2_default.elf
+make[3]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build'
+make[3]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build'
+[  2%] Creating directories for 'picotoolBuild'
+make[3]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build'
+[  2%] Built target bs2_default
+make[3]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build'
+[  3%] No download step for 'picotoolBuild'
+[  4%] Generating bs2_default.bin
+[  4%] Generating bs2_default_padded_checksummed.S
+[  4%] No update step for 'picotoolBuild'
+make[3]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build'
+make[3]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build'
+[  4%] No patch step for 'picotoolBuild'
+[  4%] Building ASM object pico-sdk/src/rp2040/boot_stage2/CMakeFiles/bs2_default_library.dir/bs2_default_padded_checksummed.S.o
+make[3]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build'
+[  4%] Performing configure step for 'picotoolBuild'
+[  4%] Built target bs2_default_library
+make[3]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build'
+make[3]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build'
+make[3]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build'
+[  7%] Building C object CMakeFiles/FreeRTOS-Kernel.dir/home/ricardo/FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2040/port.c.o
+[  7%] Building C object CMakeFiles/FreeRTOS-Kernel.dir/home/ricardo/FreeRTOS-Kernel/event_groups.c.o
+[  7%] Building C object CMakeFiles/FreeRTOS-Kernel.dir/home/ricardo/FreeRTOS-Kernel/list.c.o
+[  7%] Building C object CMakeFiles/FreeRTOS-Kernel.dir/home/ricardo/FreeRTOS-Kernel/tasks.c.o
+[  7%] Building C object CMakeFiles/FreeRTOS-Kernel.dir/home/ricardo/FreeRTOS-Kernel/queue.c.o
+[  7%] Building C object CMakeFiles/FreeRTOS-Kernel.dir/home/ricardo/FreeRTOS-Kernel/timers.c.o
+[  7%] Building C object CMakeFiles/FreeRTOS-Kernel.dir/home/ricardo/FreeRTOS-Kernel/stream_buffer.c.o
+[  7%] Building C object CMakeFiles/FreeRTOS-Kernel.dir/home/ricardo/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.o
+[  8%] Building C object CMakeFiles/FreeRTOS-Kernel.dir/home/ricardo/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.o
+[  9%] Building C object CMakeFiles/FreeRTOS-Kernel.dir/home/ricardo/pico-sdk/src/rp2040/pico_platform/platform.c.o
+[  9%] Building C object CMakeFiles/FreeRTOS-Kernel.dir/home/ricardo/pico-sdk/src/rp2_common/pico_platform_common/common.c.o
+[ 10%] Building C object CMakeFiles/FreeRTOS-Kernel.dir/home/ricardo/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.o
+[ 10%] Building ASM object CMakeFiles/FreeRTOS-Kernel.dir/home/ricardo/pico-sdk/src/rp2_common/pico_platform_panic/custom_panic_function.S.o
+Not searching for unused variables given on the command line.
+-- The C compiler identification is GNU 13.3.0
+In file included from /home/ricardo/FreeRTOS-Kernel/include/FreeRTOS.h:58,
+                 from /home/ricardo/FreeRTOS-Kernel/list.c:37:
+/home/ricardo/FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2040/include/portmacro.h: In function 'vPortRecursiveLock':
+In file included from /home/ricardo/FreeRTOS-Kernel/include/FreeRTOS.h:58,
+                 from /home/ricardo/FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2040/port.c:34:
+/home/ricardo/FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2040/include/portmacro.h: In function 'vPortRecursiveLock':
+/home/ricardo/Documents/Personal/T_H_LCD_rp2040/src/FreeRTOSConfig.h:73:21: warning: implicit declaration of function 'taskDISABLE_INTERRUPTS'; did you mean 'portDISABLE_INTERRUPTS'? [-Wimplicit-function-declaration]
+   73 |     if ((x) == 0) { taskDISABLE_INTERRUPTS(); for (;;); }
+      |                     ^~~~~~~~~~~~~~~~~~~~~~
+/home/ricardo/FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2040/include/portmacro.h:227:5: note: in expansion of macro 'configASSERT'
+  227 |     configASSERT( ulLockNum < portRTOS_SPINLOCK_COUNT );
+      |     ^~~~~~~~~~~~
+/home/ricardo/Documents/Personal/T_H_LCD_rp2040/src/FreeRTOSConfig.h:73:21: warning: implicit declaration of function 'taskDISABLE_INTERRUPTS'; did you mean 'portDISABLE_INTERRUPTS'? [-Wimplicit-function-declaration]
+   73 |     if ((x) == 0) { taskDISABLE_INTERRUPTS(); for (;;); }
+      |                     ^~~~~~~~~~~~~~~~~~~~~~
+/home/ricardo/FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2040/include/portmacro.h:227:5: note: in expansion of macro 'configASSERT'
+  227 |     configASSERT( ulLockNum < portRTOS_SPINLOCK_COUNT );
+      |     ^~~~~~~~~~~~
+/home/ricardo/FreeRTOS-Kernel/include/FreeRTOS.h: At top level:
+/home/ricardo/FreeRTOS-Kernel/include/FreeRTOS.h: At top level:
+/home/ricardo/FreeRTOS-Kernel/include/FreeRTOS.h:200:10: error: #error Missing definition: configUSE_PASSIVE_IDLE_HOOK must be defined in FreeRTOSConfig.h as either 1 or 0. See the Configuration section of the FreeRTOS API documentation for details.
+  200 |         #error Missing definition:  configUSE_PASSIVE_IDLE_HOOK must be defined in FreeRTOSConfig.h as either 1 or 0.  See the Configuration section of the FreeRTOS API documentation for details.
+      |          ^~~~~
+/home/ricardo/FreeRTOS-Kernel/include/FreeRTOS.h:200:10: error: #error Missing definition: configUSE_PASSIVE_IDLE_HOOK must be defined in FreeRTOSConfig.h as either 1 or 0. See the Configuration section of the FreeRTOS API documentation for details.
+  200 |         #error Missing definition:  configUSE_PASSIVE_IDLE_HOOK must be defined in FreeRTOSConfig.h as either 1 or 0.  See the Configuration section of the FreeRTOS API documentation for details.
+      |          ^~~~~
+In file included from /home/ricardo/FreeRTOS-Kernel/include/FreeRTOS.h:58,
+                 from /home/ricardo/FreeRTOS-Kernel/queue.c:37:
+/home/ricardo/FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2040/include/portmacro.h: In function 'vPortRecursiveLock':
+In file included from /home/ricardo/FreeRTOS-Kernel/include/FreeRTOS.h:58,
+                 from /home/ricardo/FreeRTOS-Kernel/tasks.c:40:
+/home/ricardo/FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2040/include/portmacro.h: In function 'vPortRecursiveLock':
+/home/ricardo/Documents/Personal/T_H_LCD_rp2040/src/FreeRTOSConfig.h:73:21: warning: implicit declaration of function 'taskDISABLE_INTERRUPTS'; did you mean 'portDISABLE_INTERRUPTS'? [-Wimplicit-function-declaration]
+   73 |     if ((x) == 0) { taskDISABLE_INTERRUPTS(); for (;;); }
+      |                     ^~~~~~~~~~~~~~~~~~~~~~
+/home/ricardo/FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2040/include/portmacro.h:227:5: note: in expansion of macro 'configASSERT'
+  227 |     configASSERT( ulLockNum < portRTOS_SPINLOCK_COUNT );
+      |     ^~~~~~~~~~~~
+/home/ricardo/Documents/Personal/T_H_LCD_rp2040/src/FreeRTOSConfig.h:73:21: warning: implicit declaration of function 'taskDISABLE_INTERRUPTS'; did you mean 'portDISABLE_INTERRUPTS'? [-Wimplicit-function-declaration]
+   73 |     if ((x) == 0) { taskDISABLE_INTERRUPTS(); for (;;); }
+      |                     ^~~~~~~~~~~~~~~~~~~~~~
+/home/ricardo/FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2040/include/portmacro.h:227:5: note: in expansion of macro 'configASSERT'
+  227 |     configASSERT( ulLockNum < portRTOS_SPINLOCK_COUNT );
+      |     ^~~~~~~~~~~~
+make[3]: *** [CMakeFiles/FreeRTOS-Kernel.dir/build.make:90: CMakeFiles/FreeRTOS-Kernel.dir/home/ricardo/FreeRTOS-Kernel/list.c.o] Error 1
+make[3]: *** Waiting for unfinished jobs....
+/home/ricardo/FreeRTOS-Kernel/include/FreeRTOS.h: At top level:
+/home/ricardo/FreeRTOS-Kernel/include/FreeRTOS.h: At top level:
+/home/ricardo/FreeRTOS-Kernel/include/FreeRTOS.h:200:10: error: #error Missing definition: configUSE_PASSIVE_IDLE_HOOK must be defined in FreeRTOSConfig.h as either 1 or 0. See the Configuration section of the FreeRTOS API documentation for details.
+  200 |         #error Missing definition:  configUSE_PASSIVE_IDLE_HOOK must be defined in FreeRTOSConfig.h as either 1 or 0.  See the Configuration section of the FreeRTOS API documentation for details.
+      |          ^~~~~
+/home/ricardo/FreeRTOS-Kernel/include/FreeRTOS.h:200:10: error: #error Missing definition: configUSE_PASSIVE_IDLE_HOOK must be defined in FreeRTOSConfig.h as either 1 or 0. See the Configuration section of the FreeRTOS API documentation for details.
+  200 |         #error Missing definition:  configUSE_PASSIVE_IDLE_HOOK must be defined in FreeRTOSConfig.h as either 1 or 0.  See the Configuration section of the FreeRTOS API documentation for details.
+      |          ^~~~~
+In file included from /home/ricardo/FreeRTOS-Kernel/include/FreeRTOS.h:58,
+                 from /home/ricardo/FreeRTOS-Kernel/stream_buffer.c:38:
+/home/ricardo/FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2040/include/portmacro.h: In function 'vPortRecursiveLock':
+/home/ricardo/Documents/Personal/T_H_LCD_rp2040/src/FreeRTOSConfig.h:73:21: warning: implicit declaration of function 'taskDISABLE_INTERRUPTS'; did you mean 'portDISABLE_INTERRUPTS'? [-Wimplicit-function-declaration]
+   73 |     if ((x) == 0) { taskDISABLE_INTERRUPTS(); for (;;); }
+      |                     ^~~~~~~~~~~~~~~~~~~~~~
+/home/ricardo/FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2040/include/portmacro.h:227:5: note: in expansion of macro 'configASSERT'
+  227 |     configASSERT( ulLockNum < portRTOS_SPINLOCK_COUNT );
+      |     ^~~~~~~~~~~~
+In file included from /home/ricardo/FreeRTOS-Kernel/include/FreeRTOS.h:58,
+                 from /home/ricardo/FreeRTOS-Kernel/event_groups.c:38:
+/home/ricardo/FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2040/include/portmacro.h: In function 'vPortRecursiveLock':
+/home/ricardo/Documents/Personal/T_H_LCD_rp2040/src/FreeRTOSConfig.h:73:21: warning: implicit declaration of function 'taskDISABLE_INTERRUPTS'; did you mean 'portDISABLE_INTERRUPTS'? [-Wimplicit-function-declaration]
+   73 |     if ((x) == 0) { taskDISABLE_INTERRUPTS(); for (;;); }
+      |                     ^~~~~~~~~~~~~~~~~~~~~~
+/home/ricardo/FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2040/include/portmacro.h:227:5: note: in expansion of macro 'configASSERT'
+  227 |     configASSERT( ulLockNum < portRTOS_SPINLOCK_COUNT );
+      |     ^~~~~~~~~~~~
+/home/ricardo/FreeRTOS-Kernel/include/FreeRTOS.h: At top level:
+/home/ricardo/FreeRTOS-Kernel/include/FreeRTOS.h:200:10: error: #error Missing definition: configUSE_PASSIVE_IDLE_HOOK must be defined in FreeRTOSConfig.h as either 1 or 0. See the Configuration section of the FreeRTOS API documentation for details.
+  200 |         #error Missing definition:  configUSE_PASSIVE_IDLE_HOOK must be defined in FreeRTOSConfig.h as either 1 or 0.  See the Configuration section of the FreeRTOS API documentation for details.
+      |          ^~~~~
+/home/ricardo/FreeRTOS-Kernel/include/FreeRTOS.h: At top level:
+/home/ricardo/FreeRTOS-Kernel/include/FreeRTOS.h:200:10: error: #error Missing definition: configUSE_PASSIVE_IDLE_HOOK must be defined in FreeRTOSConfig.h as either 1 or 0. See the Configuration section of the FreeRTOS API documentation for details.
+  200 |         #error Missing definition:  configUSE_PASSIVE_IDLE_HOOK must be defined in FreeRTOSConfig.h as either 1 or 0.  See the Configuration section of the FreeRTOS API documentation for details.
+      |          ^~~~~
+make[3]: *** [CMakeFiles/FreeRTOS-Kernel.dir/build.make:132: CMakeFiles/FreeRTOS-Kernel.dir/home/ricardo/FreeRTOS-Kernel/event_groups.c.o] Error 1
+In file included from /home/ricardo/FreeRTOS-Kernel/include/FreeRTOS.h:58,
+                 from /home/ricardo/FreeRTOS-Kernel/timers.c:37:
+/home/ricardo/FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2040/include/portmacro.h: In function 'vPortRecursiveLock':
+make[3]: *** [CMakeFiles/FreeRTOS-Kernel.dir/build.make:146: CMakeFiles/FreeRTOS-Kernel.dir/home/ricardo/FreeRTOS-Kernel/stream_buffer.c.o] Error 1
+/home/ricardo/Documents/Personal/T_H_LCD_rp2040/src/FreeRTOSConfig.h:73:21: warning: implicit declaration of function 'taskDISABLE_INTERRUPTS'; did you mean 'portDISABLE_INTERRUPTS'? [-Wimplicit-function-declaration]
+   73 |     if ((x) == 0) { taskDISABLE_INTERRUPTS(); for (;;); }
+      |                     ^~~~~~~~~~~~~~~~~~~~~~
+/home/ricardo/FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2040/include/portmacro.h:227:5: note: in expansion of macro 'configASSERT'
+  227 |     configASSERT( ulLockNum < portRTOS_SPINLOCK_COUNT );
+      |     ^~~~~~~~~~~~
+[ 11%] Building C object CMakeFiles/FreeRTOS-Kernel.dir/home/ricardo/pico-sdk/src/common/hardware_claim/claim.c.o
+/home/ricardo/FreeRTOS-Kernel/include/FreeRTOS.h: At top level:
+/home/ricardo/FreeRTOS-Kernel/include/FreeRTOS.h:200:10: error: #error Missing definition: configUSE_PASSIVE_IDLE_HOOK must be defined in FreeRTOSConfig.h as either 1 or 0. See the Configuration section of the FreeRTOS API documentation for details.
+  200 |         #error Missing definition:  configUSE_PASSIVE_IDLE_HOOK must be defined in FreeRTOSConfig.h as either 1 or 0.  See the Configuration section of the FreeRTOS API documentation for details.
+      |          ^~~~~
+[ 10%] Building C object CMakeFiles/FreeRTOS-Kernel.dir/home/ricardo/pico-sdk/src/rp2_common/hardware_sync/sync.c.o
+make[3]: *** [CMakeFiles/FreeRTOS-Kernel.dir/build.make:104: CMakeFiles/FreeRTOS-Kernel.dir/home/ricardo/FreeRTOS-Kernel/queue.c.o] Error 1
+make[3]: *** [CMakeFiles/FreeRTOS-Kernel.dir/build.make:118: CMakeFiles/FreeRTOS-Kernel.dir/home/ricardo/FreeRTOS-Kernel/timers.c.o] Error 1
+/home/ricardo/FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2040/port.c: In function 'xPortStartSchedulerOnCore':
+/home/ricardo/FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2040/port.c:325:9: warning: implicit declaration of function 'multicore_fifo_clear_irq' [-Wimplicit-function-declaration]
+  325 |         multicore_fifo_clear_irq();
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~
+make[3]: *** [CMakeFiles/FreeRTOS-Kernel.dir/build.make:76: CMakeFiles/FreeRTOS-Kernel.dir/home/ricardo/FreeRTOS-Kernel/tasks.c.o] Error 1
+/home/ricardo/FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2040/port.c:326:9: warning: implicit declaration of function 'multicore_fifo_drain' [-Wimplicit-function-declaration]
+  326 |         multicore_fifo_drain();
+      |         ^~~~~~~~~~~~~~~~~~~~
+/home/ricardo/FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2040/port.c:329:46: error: 'prvFIFOInterruptHandler' undeclared (first use in this function)
+  329 |         irq_set_exclusive_handler( ulIRQNum, prvFIFOInterruptHandler );
+      |                                              ^~~~~~~~~~~~~~~~~~~~~~~
+/home/ricardo/FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2040/port.c:329:46: note: each undeclared identifier is reported only once for each function it appears in
+/home/ricardo/FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2040/port.c: In function 'xPortStartScheduler':
+/home/ricardo/FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2040/port.c:367:9: warning: implicit declaration of function 'multicore_reset_core1' [-Wimplicit-function-declaration]
+  367 |         multicore_reset_core1();
+      |         ^~~~~~~~~~~~~~~~~~~~~
+/home/ricardo/FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2040/port.c:368:9: warning: implicit declaration of function 'multicore_launch_core1' [-Wimplicit-function-declaration]
+  368 |         multicore_launch_core1( prvDisableInterruptsAndPortStartSchedulerOnCore );
+      |         ^~~~~~~~~~~~~~~~~~~~~~
+-- The CXX compiler identification is GNU 13.3.0
+/home/ricardo/FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2040/port.c: In function 'vYieldCore':
+/home/ricardo/FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2040/port.c:512:9: error: 'sio_hw' undeclared (first use in this function); did you mean 'scb_hw'?
+  512 |         sio_hw->fifo_wr = 0;
+      |         ^~~~~~
+      |         scb_hw
+make[3]: *** [CMakeFiles/FreeRTOS-Kernel.dir/build.make:160: CMakeFiles/FreeRTOS-Kernel.dir/home/ricardo/FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2040/port.c.o] Error 1
+-- Detecting C compiler ABI info
+make[3]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build'
+make[2]: *** [CMakeFiles/Makefile2:1894: CMakeFiles/FreeRTOS-Kernel.dir/all] Error 2
+make[2]: *** Waiting for unfinished jobs....
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Using the single-header code from /home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-src/lib/nlohmann_json/single_include/
+PICOTOOL_NO_LIBUSB is set - no USB support will be built
+-- Configuring done (0.4s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build
+[ 13%] Performing build step for 'picotoolBuild'
+make[4]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[5]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+[  3%] Built target unreadable_rom_data
+-- The C compiler identification is GNU 13.3.0
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+[  5%] Built target errors
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+-- The C compiler identification is GNU 13.3.0
+-- The CXX compiler identification is GNU 13.3.0
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+-- The ASM compiler identification is GNU
+-- Found assembler: /usr/bin/cc
+-- Detecting C compiler ABI info
+-- The CXX compiler identification is GNU 13.3.0
+-- The ASM compiler identification is GNU
+-- Found assembler: /usr/bin/cc
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+Using precompiled enc_bootloader.elf
+-- Configuring done (0.6s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build/enc_bootloader
+make[7]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build/enc_bootloader'
+-- Detecting CXX compiler ABI info - done
+make[7]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build/enc_bootloader'
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+Using precompiled enc_bootloader.elf
+-- Configuring done (0.6s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build/enc_bootloader_mbedtls
+make[7]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build/enc_bootloader_mbedtls'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+[ 12%] Built target enc_bootloader
+make[7]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build/enc_bootloader_mbedtls'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+[ 19%] Built target enc_bootloader_mbedtls
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+[ 83%] Built target mbedtls
+[ 85%] Built target model
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+[ 87%] Built target embedded_data_no_libusb
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+[ 89%] Built target elf
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+[ 91%] Built target elf2uf2
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+[ 93%] Built target bintool
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+[100%] Built target picotool
+make[5]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[4]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+[ 13%] Performing install step for 'picotoolBuild'
+make[4]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[5]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[7]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build/enc_bootloader'
+make[7]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build/enc_bootloader_mbedtls'
+[  3%] Built target unreadable_rom_data
+[  5%] Built target errors
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[7]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build/enc_bootloader'
+make[7]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build/enc_bootloader_mbedtls'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+[  7%] Built target model
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+[ 71%] Built target mbedtls
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+[ 73%] Built target elf
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+[ 86%] Built target enc_bootloader_mbedtls
+[ 87%] Built target enc_bootloader
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+[ 93%] Built target bintool
+[ 93%] Built target embedded_data_no_libusb
+[ 93%] Built target elf2uf2
+make[6]: Entering directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+make[6]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+[100%] Built target picotool
+make[5]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+Install the project...
+-- Install configuration: "Release"
+make[4]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool-build'
+[ 14%] Performing test step for 'picotoolBuild'
+picotool v2.3.0 (Linux, GNU-13.3.0, Release)
+
+This version of picotool was compiled without USB support. Some commands are not available.
+[ 14%] Completed 'picotoolBuild'
+make[3]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build'
+[ 14%] Built target picotoolBuild
+make[2]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build'
+make[1]: *** [Makefile:91: all] Error 2
+make[1]: Leaving directory '/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build'
+make: *** [Makefile:12: all] Error 2

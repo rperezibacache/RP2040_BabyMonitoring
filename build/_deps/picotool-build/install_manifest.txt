@@ -1,0 +1,7 @@
+/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool/picotool
+/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool/picotoolTargets.cmake
+/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool/picotoolTargets-release.cmake
+/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool/picotoolConfig.cmake
+/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool/picotoolConfigVersion.cmake
+/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool/enc_bootloader.elf
+/home/ricardo/Documents/Personal/T_H_LCD_rp2040/build/_deps/picotool/enc_bootloader_mbedtls.elf
