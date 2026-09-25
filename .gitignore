@@ -1,0 +1,41 @@
+# ==========================================
+# Virtual Environments
+# ==========================================
+# Excludes .venv folders anywhere in the repository
+**/.venv/
+.venv/
+venv/
+ENV/
+env/
+
+# ==========================================
+# Python & Bytecode
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# ==========================================
+# Streamlit & Local Logs
+# ==========================================
+.streamlit/
+*.log
+
+# ==========================================
+# Data Files (Optional)
+# ==========================================
+# Uncomment the line below if you don't want to track sensor data CSVs in git
+# *.csv
+
+# ==========================================
+# Operating System & IDE Files
+# ==========================================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Virtual Environments
+.venv/
+**/.venv/
