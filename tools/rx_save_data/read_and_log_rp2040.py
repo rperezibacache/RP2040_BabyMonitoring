@@ -1,111 +1,130 @@
 import csv
+import datetime
 import os
 import re
 import time
 import serial
-import serial.tools.list_ports
 
-CSV_FILENAME = "sensor_readings.csv"
+SERIAL_PORT = "/dev/ttyACM0"
+BAUD_RATE = 115200
+CSV_FILE_PATH = os.path.expanduser(
+    "~/Documents/GIT_repos/RP2040_BabyMonitoring/tools/rx_save_data/sensor_readings.csv"
+)
 
-
-def find_rp2040_port():
-    """Auto-detect the serial port for the RP2040/Raspberry Pi Pico."""
-    ports = serial.tools.list_ports.comports()
-    for port in ports:
-        if "ttyACM" in port.device or "ttyUSB" in port.device:
-            return port.device
-    return None
+# Buffer settings
+BUFFER_SIZE = 30  # Number of complete reading blocks to aggregate before logging
+readings_buffer = []
 
 
-def initialize_csv(filename):
-    """Ensure the CSV file exists and has header columns."""
-    file_exists = os.path.exists(filename)
-    with open(filename, mode="a", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        # Write headers if file is being newly created
-        if not file_exists:
+def initialize_csv(file_path):
+    """Ensures directory and CSV file with headers exist."""
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    if not os.path.exists(file_path):
+        with open(file_path, mode="w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
             writer.writerow(["Date", "Time", "Measure", "Value", "Unit"])
 
 
-def log_readings_to_csv(filename, raw_block):
-    """Parse a full sensor readings block and append entries to the CSV."""
-    current_date = time.strftime("%Y-%m-%d")
-    current_time = time.strftime("%H:%M:%S")
+def parse_sensor_block(block_text):
+    """Parses a raw serial text block into a list of tuples: (Measure, Value, Unit)."""
+    parsed_metrics = []
+    lines = block_text.strip().split("\n")
 
-    # Regex patterns to extract each key, numerical value, and optional unit
-    # Matches patterns like 'Temperature: 25.33 °C' or 'AQI: 3 (1-5)'
-    patterns = [
-        (r"Temperature:\s*([\d\.]+)\s*(°C|C)", "Temperature"),
-        (r"Humidity:\s*([\d\.]+)\s*(%)", "Humidity"),
-        (r"AQI:\s*(\d+)", "AQI"),
-        (r"TVOC:\s*(\d+)\s*(ppb)", "TVOC"),
-        (r"eCO2:\s*(\d+)\s*(ppm)", "eCO2"),
-        (r"Broadband \(Visible \+ IR\):\s*(\d+)", "Broadband (Visible + IR)"),
-        (r"Infrared:\s*(\d+)", "Infrared"),
-    ]
-
-    extracted_rows = []
-
-    for pattern, measure_name in patterns:
-        match = re.search(pattern, raw_block)
+    for line in lines:
+        # Match lines formatted as: "Measure: Value Unit" or "AQI: 3 (1-5)"
+        match = re.search(
+            r"([A-Za-z0-9_\s]+):\s*([0-9.]+)\s*([A-Za-z0-9°%/-]*)", line
+        )
         if match:
-            value = match.group(1)
-            # Check if unit was captured in group 2
-            unit = match.group(2) if len(match.groups()) > 1 else ""
-            extracted_rows.append(
-                [current_date, current_time, measure_name, value, unit]
+            measure = match.group(1).strip()
+            value = float(match.group(2))
+            unit = match.group(3).strip()
+            parsed_metrics.append((measure, value, unit))
+
+    return parsed_metrics
+
+
+def flush_and_save_averages(buffer, file_path):
+    """Computes the arithmetic average across the 30 buffered measurements and appends to CSV."""
+    if not buffer:
+        return
+
+    # Group values and units by measure: { 'Temperature': {'values': [...], 'unit': '°C'} }
+    aggregated_data = {}
+
+    for single_read in buffer:
+        for measure, value, unit in single_read:
+            if measure not in aggregated_data:
+                aggregated_data[measure] = {"values": [], "unit": unit}
+            aggregated_data[measure]["values"].append(value)
+
+    # Use current Pi time for the averaged record
+    now = datetime.datetime.now()
+    date_str = now.strftime("%Y-%m-%d")
+    time_str = now.strftime("%H:%M:%S")
+
+    rows_to_write = []
+    for measure, details in aggregated_data.items():
+        vals = details["values"]
+        if vals:
+            avg_val = round(sum(vals) / len(vals), 2)
+            rows_to_write.append(
+                [date_str, time_str, measure, avg_val, details["unit"]]
             )
 
-    if extracted_rows:
-        with open(filename, mode="a", newline="", encoding="utf-8") as f:
-            writer = csv.writer(f)
-            writer.writerows(extracted_rows)
-        print(
-            f"[{current_time}] Saved block ({len(extracted_rows)} metrics) to {filename}"
-        )
+    # Append averaged rows to CSV
+    with open(file_path, mode="a", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerows(rows_to_write)
+
+    print(
+        f"[{date_str} {time_str}] Successfully averaged and wrote {len(buffer)} readings to CSV."
+    )
 
 
 def main():
-    port_name = find_rp2040_port() or "/dev/ttyACM0"
-    baud_rate = 115200
+    initialize_csv(CSV_FILE_PATH)
+    print(f"Starting RP2040 Logger with {BUFFER_SIZE}-sample averaging...")
 
-    initialize_csv(CSV_FILENAME)
-    print(f"Connecting to RP2040 on {port_name}...")
-    print(f"Appending readings to '{CSV_FILENAME}'\n")
+    while True:
+        try:
+            print(f"Opening serial connection on {SERIAL_PORT}...")
+            with serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=2) as ser:
+                print("Serial connected! Listening for incoming sensor data...")
 
-    try:
-        ser = serial.Serial(port=port_name, baudrate=baud_rate, timeout=2.0)
-        ser.reset_input_buffer()
+                current_block = []
+                recording = False
 
-        block_buffer = []
+                while True:
+                    line = (
+                        ser.readline().decode("utf-8", errors="ignore").strip()
+                    )
 
-        while True:
-            if ser.in_waiting > 0:
-                line = ser.readline().decode("utf-8", errors="replace").rstrip()
+                    if "--- Sensor Readings ---" in line:
+                        if current_block and recording:
+                            block_text = "\n".join(current_block)
+                            parsed = parse_sensor_block(block_text)
 
-                # Print live output to terminal
-                timestamp = time.strftime("%H:%M:%S")
-                print(f"[{timestamp}] Received: {line}")
+                            if parsed:
+                                readings_buffer.append(parsed)
+                                print(
+                                    f"Buffered sample {len(readings_buffer)}/{BUFFER_SIZE}"
+                                )
 
-                # Accumulate block text
-                if "--- Sensor Readings ---" in line:
-                    # Parse the previous accumulated block if present
-                    if block_buffer:
-                        full_block = "\n".join(block_buffer)
-                        log_readings_to_csv(CSV_FILENAME, full_block)
-                        block_buffer = []
+                            if len(readings_buffer) >= BUFFER_SIZE:
+                                flush_and_save_averages(
+                                    readings_buffer, CSV_FILE_PATH
+                                )
+                                readings_buffer.clear()
 
-                block_buffer.append(line)
+                        current_block = []
+                        recording = True
+                    elif recording and line:
+                        current_block.append(line)
 
-            time.sleep(0.01)
-
-    except serial.SerialException as e:
-        print(f"\n[Error] Could not open port {port_name}: {e}")
-    except KeyboardInterrupt:
-        print("\nProgram stopped by user.")
-    finally:
-        if "ser" in locals() and ser.is_open:
-            ser.close()
+        except (serial.SerialException, OSError) as e:
+            print(f"Serial port disconnected ({e}). Retrying in 3 seconds...")
+            time.sleep(3)
 
 
 if __name__ == "__main__":
