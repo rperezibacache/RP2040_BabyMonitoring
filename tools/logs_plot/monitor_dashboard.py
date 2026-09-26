@@ -6,19 +6,21 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
+# Configuration & Paths
 REMOTE_SSH_USER_HOST = "pi@192.168.0.70"
 REMOTE_FILE_PATH = "/home/pi/Documents/GIT_repos/RP2040_BabyMonitoring/tools/rx_save_data/sensor_readings.csv"
 LOCAL_DIR = "/home/ricardo/Documents/Personal/T_H_LCD_rp2040/tools/logs_plot/"
 LOCAL_CSV_PATH = os.path.join(LOCAL_DIR, "sensor_readings.csv")
 
 st.set_page_config(
-    page_title="RP2040 Environmental Sensor Monitor",
+    page_title="RP2040 Environmental Monitor",
     page_icon="🌡️",
     layout="wide",
 )
 
 
 def sync_remote_csv():
+    """Syncs CSV log file from Raspberry Pi using rsync."""
     os.makedirs(LOCAL_DIR, exist_ok=True)
     remote_src = f"{REMOTE_SSH_USER_HOST}:{REMOTE_FILE_PATH}"
     try:
@@ -38,6 +40,7 @@ def sync_remote_csv():
 
 
 def clean_aqi_value(val_str):
+    """Extracts integer value from AQI strings."""
     if pd.isna(val_str):
         return None
     match = re.search(r"(\d+)", str(val_str))
@@ -45,6 +48,7 @@ def clean_aqi_value(val_str):
 
 
 def get_ens160_aqi_status(aqi_val):
+    """Returns status text and color icon based on ENS160 AQI rating."""
     try:
         val = int(aqi_val)
         if val in [1, 2]:
@@ -61,37 +65,85 @@ def get_ens160_aqi_status(aqi_val):
 
 
 def load_and_clean_data(file_path):
+    """Reads and repairs CSV logs regardless of missing headers or truncated time values."""
     if not os.path.exists(file_path):
         return pd.DataFrame()
 
     try:
-        df = pd.read_csv(file_path)
-        if df.empty or "Measure" not in df.columns:
+        # Step 1: Inspect raw file to check for header existence
+        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+            first_line = f.readline().lower()
+
+        # Step 2: Load dataframe with or without headers dynamically
+        if "date" in first_line or "measure" in first_line:
+            df = pd.read_csv(file_path)
+        else:
+            df = pd.read_csv(file_path, header=None)
+            # Standardize columns for headerless CSVs
+            cols = ["Date", "Time", "Measure", "Value", "Unit"]
+            df = df.iloc[:, : len(cols)]  # Clip extra trailing columns
+            df.columns = cols[: df.shape[1]]
+
+        if df.empty:
             return pd.DataFrame()
 
-        # Clean NaN/invalid values from Measure column
-        df = df.dropna(subset=["Measure"])
-        df["Measure"] = df["Measure"].astype(str).str.strip()
+        # Step 3: Strip whitespace from text columns
+        for col in ["Date", "Time", "Measure"]:
+            if col in df.columns:
+                df[col] = df[col].astype(str).str.strip()
+
+        # Step 4: Map truncated/varying measure names to clean canonical names
+        def normalize_measure(raw_name):
+            n = raw_name.lower()
+            if "temp" in n:
+                return "Temperature"
+            elif "hum" in n:
+                return "Humidity"
+            elif "aqi" in n:
+                return "AQI"
+            elif "tvoc" in n:
+                return "TVOC"
+            elif "eco2" in n or "co2" in n:
+                return "eCO2"
+            elif "broadband" in n:
+                return "Broadband"
+            elif "infrared" in n or "ir" in n:
+                return "Infrared"
+            return raw_name.strip()
+
+        df["Measure"] = df["Measure"].apply(normalize_measure)
+
+        # Drop invalid header duplicates or artifacts
         df = df[~df["Measure"].isin(["", "Measure", "nan", "None"])]
 
+        # Clean AQI values if strings like "1 (1-5)" exist
         aqi_mask = df["Measure"] == "AQI"
         if aqi_mask.any():
             df.loc[aqi_mask, "Value"] = df.loc[aqi_mask, "Value"].apply(
                 clean_aqi_value
             )
 
-        df["Timestamp"] = pd.to_datetime(
-            df["Date"].astype(str) + " " + df["Time"].astype(str),
-            errors="coerce",
-        )
+        # Step 5: Construct valid timestamps (handles HH:MM missing seconds)
         df["Value"] = pd.to_numeric(df["Value"], errors="coerce")
+        time_str = df["Time"].apply(
+            lambda t: t if len(t.split(":")) == 3 else f"{t}:00"
+        )
+        df["Timestamp"] = pd.to_datetime(
+            df["Date"] + " " + time_str, errors="coerce"
+        )
+
+        if "Unit" not in df.columns:
+            df["Unit"] = ""
 
         return df.dropna(subset=["Timestamp", "Value"])
-    except Exception:
+
+    except Exception as e:
+        st.error(f"Error reading dataset: {e}")
         return pd.DataFrame()
 
 
 def build_plotly_figure(signal_df, measure, height=300):
+    """Generates an interactive Plotly graph for a given sensor signal."""
     unit_label = (
         signal_df["Unit"].iloc[-1]
         if not signal_df.empty and pd.notna(signal_df["Unit"].iloc[-1])
@@ -122,7 +174,7 @@ def build_plotly_figure(signal_df, measure, height=300):
 
 
 def main():
-    st.title("👶 RP2040 Environmental Sensor Monitor")
+    st.title("👶 Emilio's Environmental Sensor Monitor")
 
     st.sidebar.header("⚙️ Dashboard Controls")
     live_update = st.sidebar.checkbox(
@@ -139,7 +191,9 @@ def main():
     df = load_and_clean_data(LOCAL_CSV_PATH)
 
     if df.empty:
-        st.error(f"No valid data in `{LOCAL_CSV_PATH}`.")
+        st.error(
+            f"No valid sensor data parsed from `{LOCAL_CSV_PATH}`. Please verify file path or Raspberry Pi sync."
+        )
         st.stop()
 
     st.sidebar.header("🔍 Historical Filters")
@@ -167,16 +221,16 @@ def main():
         f"Last synced timestamp: **{latest_timestamp.strftime('%Y-%m-%d %H:%M:%S')}**"
     )
 
+    # Extract single most recent value per metric
     latest_per_measure = (
         df.sort_values("Timestamp").groupby("Measure").last().reset_index()
     )
-
-    # Type-safe sorting for Measure names
     measures = sorted(
         [str(m) for m in filtered_df["Measure"].unique() if pd.notna(m)]
     )
 
     # --- TOP KPI CARDS ---
+    st.subheader("📊 Current Metrics")
     kpi_cols = st.columns(min(max(len(measures), 1), 7))
     for idx, measure in enumerate(measures):
         row = latest_per_measure[latest_per_measure["Measure"] == measure]
