@@ -5,35 +5,36 @@ import re
 import time
 import serial
 
+# Configuration
 SERIAL_PORT = "/dev/ttyACM0"
 BAUD_RATE = 115200
 CSV_FILE_PATH = os.path.expanduser(
     "~/Documents/GIT_repos/RP2040_BabyMonitoring/tools/rx_save_data/sensor_readings.csv"
 )
 
-BUFFER_SIZE = 30  # Number of reading blocks to average before saving
+BUFFER_SIZE = 30  # Number of reading frames to average (~30s - 1 min) before appending to CSV
 readings_buffer = []
 
 
 def initialize_csv(file_path):
-    """Ensures CSV directory and headers exist."""
+    """Ensures directory exists and writes the CSV header row if the file is missing or empty."""
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
-    if not os.path.exists(file_path):
+    if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
         with open(file_path, mode="w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
             writer.writerow(["Date", "Time", "Measure", "Value", "Unit"])
 
 
 def parse_sensor_block(block_text):
-    """Parses multi-metric lines delimited by '|' or newlines."""
+    """Parses incoming text blocks, handling multi-metric lines delimited by '|' or newlines."""
     parsed_metrics = []
 
-    # Clean app prefixes like '[15:02:37] Received:' if passed through
+    # Strip GUI/Terminal prefixes if present (e.g., '[15:02:37] Received:')
     block_text = re.sub(
         r"\[\d{2}:\d{2}:\d{2}\]\s*Received:\s*", "", block_text, flags=re.IGNORECASE
     )
 
-    # Split lines into individual key-value pairs separated by '|' or '\n'
+    # Split lines into individual key-value chunks separated by '|' or newlines
     raw_chunks = re.split(r"[\n|]", block_text)
 
     for chunk in raw_chunks:
@@ -45,7 +46,7 @@ def parse_sensor_block(block_text):
         raw_label = parts[0].strip()
         rest = parts[1].strip()
 
-        # Extract numeric value
+        # Extract numeric value (matches positive/negative floats or integers)
         val_match = re.search(r"[-+]?\d*\.\d+|\d+", rest)
         if not val_match:
             continue
@@ -53,7 +54,7 @@ def parse_sensor_block(block_text):
         try:
             value = float(val_match.group())
 
-            # Canonical mapping for metric names
+            # Canonical metric name mapping (resolves truncated strings like 'Temperatur')
             label_lower = raw_label.lower()
             if "temp" in label_lower:
                 measure = "Temperature"
@@ -67,18 +68,18 @@ def parse_sensor_block(block_text):
             elif "tvoc" in label_lower:
                 measure = "TVOC"
                 unit = "ppb"
-            elif "eco2" in label_lower:
+            elif "eco2" in label_lower or "co2" in label_lower:
                 measure = "eCO2"
                 unit = "ppm"
             elif "broadband" in label_lower:
                 measure = "Broadband"
                 unit = "lux"
-            elif "infrared" in label_lower:
+            elif "infrared" in label_lower or "ir" in label_lower:
                 measure = "Infrared"
                 unit = "lux"
             else:
                 measure = raw_label
-                # Extract unit fallback
+                # Unit extraction fallback
                 unit_match = re.search(
                     r"[A-Za-z°%/-]+", rest[val_match.end() :]
                 )
@@ -92,11 +93,12 @@ def parse_sensor_block(block_text):
 
 
 def flush_and_save_averages(buffer, file_path):
-    """Calculates average across buffered reads and appends to CSV."""
+    """Averages buffered values across frames and appends rows to the CSV file."""
     if not buffer:
         return
 
     aggregated_data = {}
+
     for single_read in buffer:
         for measure, value, unit in single_read:
             if measure not in aggregated_data:
@@ -129,7 +131,7 @@ def flush_and_save_averages(buffer, file_path):
 
 def main():
     initialize_csv(CSV_FILE_PATH)
-    print("Starting RP2040 Serial Reader...")
+    print("Starting RP2040 Serial Logger...")
 
     while True:
         try:
@@ -143,7 +145,7 @@ def main():
                         ser.readline().decode("utf-8", errors="ignore").strip()
                     )
 
-                    # Strip timestamp tag if app inserts it
+                    # Strip terminal app prefix if embedded in line
                     line = re.sub(
                         r"\[\d{2}:\d{2}:\d{2}\]\s*Received:\s*",
                         "",
@@ -171,7 +173,7 @@ def main():
                         current_block.append(line)
 
         except (serial.SerialException, OSError) as e:
-            print(f"Serial disconnected ({e}). Retrying in 3 seconds...")
+            print(f"Serial connection lost ({e}). Retrying in 3 seconds...")
             time.sleep(3)
 
 

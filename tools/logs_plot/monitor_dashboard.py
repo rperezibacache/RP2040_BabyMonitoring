@@ -69,7 +69,10 @@ def load_and_clean_data(file_path):
         if df.empty or "Measure" not in df.columns:
             return pd.DataFrame()
 
+        # Clean NaN/invalid values from Measure column
+        df = df.dropna(subset=["Measure"])
         df["Measure"] = df["Measure"].astype(str).str.strip()
+        df = df[~df["Measure"].isin(["", "Measure", "nan", "None"])]
 
         aqi_mask = df["Measure"] == "AQI"
         if aqi_mask.any():
@@ -167,7 +170,11 @@ def main():
     latest_per_measure = (
         df.sort_values("Timestamp").groupby("Measure").last().reset_index()
     )
-    measures = sorted(filtered_df["Measure"].unique().tolist())
+
+    # Type-safe sorting for Measure names
+    measures = sorted(
+        [str(m) for m in filtered_df["Measure"].unique() if pd.notna(m)]
+    )
 
     # --- TOP KPI CARDS ---
     kpi_cols = st.columns(min(max(len(measures), 1), 7))
