@@ -11,11 +11,12 @@ CSV_FILE_PATH = os.path.expanduser(
     "~/Documents/GIT_repos/RP2040_BabyMonitoring/tools/rx_save_data/sensor_readings.csv"
 )
 
-BUFFER_SIZE = 30
+BUFFER_SIZE = 30  # Number of reading blocks to average before saving
 readings_buffer = []
 
 
 def initialize_csv(file_path):
+    """Ensures CSV directory and headers exist."""
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     if not os.path.exists(file_path):
         with open(file_path, mode="w", newline="", encoding="utf-8") as f:
@@ -24,51 +25,74 @@ def initialize_csv(file_path):
 
 
 def parse_sensor_block(block_text):
+    """Parses multi-metric lines delimited by '|' or newlines."""
     parsed_metrics = []
-    lines = block_text.strip().split("\n")
 
-    for line in lines:
-        line = line.strip()
-        if not line or ":" not in line or "Sensor Readings" in line:
+    # Clean app prefixes like '[15:02:37] Received:' if passed through
+    block_text = re.sub(
+        r"\[\d{2}:\d{2}:\d{2}\]\s*Received:\s*", "", block_text, flags=re.IGNORECASE
+    )
+
+    # Split lines into individual key-value pairs separated by '|' or '\n'
+    raw_chunks = re.split(r"[\n|]", block_text)
+
+    for chunk in raw_chunks:
+        chunk = chunk.strip()
+        if not chunk or ":" not in chunk or "Sensor Readings" in chunk:
             continue
 
-        parts = line.split(":", 1)
-        raw_measure = parts[0].strip()
+        parts = chunk.split(":", 1)
+        raw_label = parts[0].strip()
         rest = parts[1].strip()
 
+        # Extract numeric value
         val_match = re.search(r"[-+]?\d*\.\d+|\d+", rest)
-        if val_match:
-            try:
-                value = float(val_match.group())
+        if not val_match:
+            continue
 
-                # Standardize metric names
-                measure_lower = raw_measure.lower()
-                if "co2" in measure_lower:
-                    measure = "eCO2"
-                elif "hum" in measure_lower:
-                    measure = "Humidity"
-                elif "temp" in measure_lower:
-                    measure = "Temperature"
-                elif "aqi" in measure_lower:
-                    measure = "AQI"
-                elif "broadband" in measure_lower:
-                    measure = "Broadband"
-                elif "tvoc" in measure_lower:
-                    measure = "TVOC"
-                else:
-                    measure = raw_measure
+        try:
+            value = float(val_match.group())
 
-                unit_match = re.search(r"[A-Za-z°%/-]+", rest[val_match.end() :])
+            # Canonical mapping for metric names
+            label_lower = raw_label.lower()
+            if "temp" in label_lower:
+                measure = "Temperature"
+                unit = "°C"
+            elif "hum" in label_lower:
+                measure = "Humidity"
+                unit = "%"
+            elif "aqi" in label_lower:
+                measure = "AQI"
+                unit = ""
+            elif "tvoc" in label_lower:
+                measure = "TVOC"
+                unit = "ppb"
+            elif "eco2" in label_lower:
+                measure = "eCO2"
+                unit = "ppm"
+            elif "broadband" in label_lower:
+                measure = "Broadband"
+                unit = "lux"
+            elif "infrared" in label_lower:
+                measure = "Infrared"
+                unit = "lux"
+            else:
+                measure = raw_label
+                # Extract unit fallback
+                unit_match = re.search(
+                    r"[A-Za-z°%/-]+", rest[val_match.end() :]
+                )
                 unit = unit_match.group().strip() if unit_match else ""
 
-                parsed_metrics.append((measure, value, unit))
-            except ValueError:
-                continue
+            parsed_metrics.append((measure, value, unit))
+        except ValueError:
+            continue
 
     return parsed_metrics
 
 
 def flush_and_save_averages(buffer, file_path):
+    """Calculates average across buffered reads and appends to CSV."""
     if not buffer:
         return
 
@@ -99,24 +123,32 @@ def flush_and_save_averages(buffer, file_path):
         writer.writerows(rows_to_write)
 
     print(
-        f"[{date_str} {time_str}] Logged {len(rows_to_write)} signals ({BUFFER_SIZE} samples averaged)."
+        f"[{date_str} {time_str}] Successfully saved {len(rows_to_write)} metrics to CSV (Averaged {len(buffer)} frames)."
     )
 
 
 def main():
     initialize_csv(CSV_FILE_PATH)
-    print("Starting RP2040 Logger...")
+    print("Starting RP2040 Serial Reader...")
 
     while True:
         try:
             with serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=2) as ser:
-                print("Serial connected!")
+                print(f"Connected to {SERIAL_PORT}!")
                 current_block = []
                 recording = False
 
                 while True:
-                    line = (
+                    raw_line = (
                         ser.readline().decode("utf-8", errors="ignore").strip()
+                    )
+
+                    # Strip timestamp tag if app inserts it
+                    line = re.sub(
+                        r"\[\d{2}:\d{2}:\d{2}\]\s*Received:\s*",
+                        "",
+                        raw_line,
+                        flags=re.IGNORECASE,
                     )
 
                     if "--- Sensor Readings ---" in line:
@@ -139,7 +171,7 @@ def main():
                         current_block.append(line)
 
         except (serial.SerialException, OSError) as e:
-            print(f"Serial dropped ({e}). Reconnecting in 3s...")
+            print(f"Serial disconnected ({e}). Retrying in 3 seconds...")
             time.sleep(3)
 
 

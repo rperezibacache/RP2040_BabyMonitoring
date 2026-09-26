@@ -12,7 +12,7 @@ LOCAL_DIR = "/home/ricardo/Documents/Personal/T_H_LCD_rp2040/tools/logs_plot/"
 LOCAL_CSV_PATH = os.path.join(LOCAL_DIR, "sensor_readings.csv")
 
 st.set_page_config(
-    page_title="RP2040 Sensor Monitoring Dashboard",
+    page_title="RP2040 Environmental Sensor Monitor",
     page_icon="🌡️",
     layout="wide",
 )
@@ -29,7 +29,7 @@ def sync_remote_csv():
             timeout=10,
         )
         return (
-            (True, "Successfully synced with Pi.")
+            (True, "Synced with Raspberry Pi.")
             if result.returncode == 0
             else (False, f"rsync Error: {result.stderr.strip()}")
         )
@@ -70,17 +70,6 @@ def load_and_clean_data(file_path):
             return pd.DataFrame()
 
         df["Measure"] = df["Measure"].astype(str).str.strip()
-
-        # Unify metric naming across all entries
-        name_map = {
-            "eco2": "eCO2",
-            "co2": "eCO2",
-            "humidity": "Humidity",
-            "broadband": "Broadband",
-            "temperature": "Temperature",
-            "aqi": "AQI",
-        }
-        df["Measure"] = df["Measure"].replace(name_map, regex=True)
 
         aqi_mask = df["Measure"] == "AQI"
         if aqi_mask.any():
@@ -147,7 +136,7 @@ def main():
     df = load_and_clean_data(LOCAL_CSV_PATH)
 
     if df.empty:
-        st.error(f"No valid data at `{LOCAL_CSV_PATH}`.")
+        st.error(f"No valid data in `{LOCAL_CSV_PATH}`.")
         st.stop()
 
     st.sidebar.header("🔍 Historical Filters")
@@ -175,14 +164,13 @@ def main():
         f"Last synced timestamp: **{latest_timestamp.strftime('%Y-%m-%d %H:%M:%S')}**"
     )
 
-    # Solution: Extract the single latest record PER measure instead of strict overall timestamp match
     latest_per_measure = (
         df.sort_values("Timestamp").groupby("Measure").last().reset_index()
     )
     measures = sorted(filtered_df["Measure"].unique().tolist())
 
     # --- TOP KPI CARDS ---
-    kpi_cols = st.columns(min(max(len(measures), 1), 6))
+    kpi_cols = st.columns(min(max(len(measures), 1), 7))
     for idx, measure in enumerate(measures):
         row = latest_per_measure[latest_per_measure["Measure"] == measure]
         col_target = kpi_cols[idx % len(kpi_cols)]
@@ -193,7 +181,7 @@ def main():
             if measure == "AQI":
                 status, icon = get_ens160_aqi_status(raw_val)
                 col_target.metric(
-                    label="Air Quality Index (AQI)",
+                    label="AQI",
                     value=f"{int(raw_val)}",
                     delta=f"{icon} {status}",
                     delta_color="normal",
@@ -211,7 +199,7 @@ def main():
 
     st.markdown("---")
 
-    # --- INSPECTION MODE & GRID PLOTS ---
+    # --- INSPECTION MODE & PLOTS ---
     st.sidebar.header("🔬 Inspection Mode")
     inspect_measure = st.sidebar.selectbox(
         "Focus on Single Signal",
