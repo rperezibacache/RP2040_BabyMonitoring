@@ -11,12 +11,11 @@ CSV_FILE_PATH = os.path.expanduser(
     "~/Documents/GIT_repos/RP2040_BabyMonitoring/tools/rx_save_data/sensor_readings.csv"
 )
 
-BUFFER_SIZE = 30  # Average 30 readings (~30s - 1 min) into 1 entry
+BUFFER_SIZE = 30
 readings_buffer = []
 
 
 def initialize_csv(file_path):
-    """Ensures directory and CSV file with headers exist."""
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     if not os.path.exists(file_path):
         with open(file_path, mode="w", newline="", encoding="utf-8") as f:
@@ -25,7 +24,6 @@ def initialize_csv(file_path):
 
 
 def parse_sensor_block(block_text):
-    """Robustly parses lines into: (Measure, Value, Unit)."""
     parsed_metrics = []
     lines = block_text.strip().split("\n")
 
@@ -35,28 +33,33 @@ def parse_sensor_block(block_text):
             continue
 
         parts = line.split(":", 1)
-        measure_raw = parts[0].strip()
+        raw_measure = parts[0].strip()
         rest = parts[1].strip()
 
-        # Extract numeric value (handles integers, floats)
         val_match = re.search(r"[-+]?\d*\.\d+|\d+", rest)
         if val_match:
             try:
                 value = float(val_match.group())
-                # Extract unit if present after the number
-                unit_match = re.search(
-                    r"(?:[0-9.]+\s*)([A-Za-z°%/-]+)", rest
-                )
-                unit = unit_match.group(1).strip() if unit_match else ""
 
-                # Standardize metric names to eliminate mismatching
-                measure = measure_raw
-                if "co2" in measure.lower():
+                # Standardize metric names
+                measure_lower = raw_measure.lower()
+                if "co2" in measure_lower:
                     measure = "eCO2"
-                elif "broadband" in measure.lower():
-                    measure = "Broadband"
-                elif "humidity" in measure.lower():
+                elif "hum" in measure_lower:
                     measure = "Humidity"
+                elif "temp" in measure_lower:
+                    measure = "Temperature"
+                elif "aqi" in measure_lower:
+                    measure = "AQI"
+                elif "broadband" in measure_lower:
+                    measure = "Broadband"
+                elif "tvoc" in measure_lower:
+                    measure = "TVOC"
+                else:
+                    measure = raw_measure
+
+                unit_match = re.search(r"[A-Za-z°%/-]+", rest[val_match.end() :])
+                unit = unit_match.group().strip() if unit_match else ""
 
                 parsed_metrics.append((measure, value, unit))
             except ValueError:
@@ -66,12 +69,10 @@ def parse_sensor_block(block_text):
 
 
 def flush_and_save_averages(buffer, file_path):
-    """Computes arithmetic average across buffered measurements and appends to CSV."""
     if not buffer:
         return
 
     aggregated_data = {}
-
     for single_read in buffer:
         for measure, value, unit in single_read:
             if measure not in aggregated_data:
@@ -98,17 +99,16 @@ def flush_and_save_averages(buffer, file_path):
         writer.writerows(rows_to_write)
 
     print(
-        f"[{date_str} {time_str}] Averaged {len(buffer)} samples for {len(rows_to_write)} signals -> saved to CSV."
+        f"[{date_str} {time_str}] Logged {len(rows_to_write)} signals ({BUFFER_SIZE} samples averaged)."
     )
 
 
 def main():
     initialize_csv(CSV_FILE_PATH)
-    print(f"Starting RP2040 Logger with {BUFFER_SIZE}-sample averaging...")
+    print("Starting RP2040 Logger...")
 
     while True:
         try:
-            print(f"Connecting to {SERIAL_PORT}...")
             with serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=2) as ser:
                 print("Serial connected!")
                 current_block = []
@@ -139,7 +139,7 @@ def main():
                         current_block.append(line)
 
         except (serial.SerialException, OSError) as e:
-            print(f"Serial disconnected ({e}). Retrying in 3 seconds...")
+            print(f"Serial dropped ({e}). Reconnecting in 3s...")
             time.sleep(3)
 
 

@@ -6,7 +6,6 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-# File Paths & Remote SSH Configuration
 REMOTE_SSH_USER_HOST = "pi@192.168.0.70"
 REMOTE_FILE_PATH = "/home/pi/Documents/GIT_repos/RP2040_BabyMonitoring/tools/rx_save_data/sensor_readings.csv"
 LOCAL_DIR = "/home/ricardo/Documents/Personal/T_H_LCD_rp2040/tools/logs_plot/"
@@ -20,10 +19,8 @@ st.set_page_config(
 
 
 def sync_remote_csv():
-    """Synchronizes sensor_readings.csv from Pi using rsync."""
     os.makedirs(LOCAL_DIR, exist_ok=True)
     remote_src = f"{REMOTE_SSH_USER_HOST}:{REMOTE_FILE_PATH}"
-
     try:
         result = subprocess.run(
             ["rsync", "-avz", "--update", remote_src, LOCAL_CSV_PATH],
@@ -31,28 +28,23 @@ def sync_remote_csv():
             text=True,
             timeout=10,
         )
-        if result.returncode == 0:
-            return True, "Successfully synchronized with Pi (rsync)."
-        else:
-            return False, f"rsync Error: {result.stderr.strip()}"
-    except subprocess.TimeoutExpired:
-        return False, "rsync connection timed out."
+        return (
+            (True, "Successfully synced with Pi.")
+            if result.returncode == 0
+            else (False, f"rsync Error: {result.stderr.strip()}")
+        )
     except Exception as e:
         return False, f"rsync Exception: {str(e)}"
 
 
 def clean_aqi_value(val_str):
-    """Extracts numerical digits from strings like '3 (1-5)'."""
     if pd.isna(val_str):
         return None
     match = re.search(r"(\d+)", str(val_str))
-    if match:
-        return float(match.group(1))
-    return None
+    return float(match.group(1)) if match else None
 
 
 def get_ens160_aqi_status(aqi_val):
-    """Categorizes ENS160 AQI (1-5)."""
     try:
         val = int(aqi_val)
         if val in [1, 2]:
@@ -69,7 +61,6 @@ def get_ens160_aqi_status(aqi_val):
 
 
 def load_and_clean_data(file_path):
-    """Loads CSV, strips whitespace from Measure names, and parses timestamps."""
     if not os.path.exists(file_path):
         return pd.DataFrame()
 
@@ -78,18 +69,18 @@ def load_and_clean_data(file_path):
         if df.empty or "Measure" not in df.columns:
             return pd.DataFrame()
 
-        # Crucial Fix: Strip leading/trailing spaces from Measure column
         df["Measure"] = df["Measure"].astype(str).str.strip()
 
-        # Normalize common measure name variations
-        df["Measure"] = df["Measure"].replace(
-            {
-                "eco2": "eCO2",
-                "eCO2 ": "eCO2",
-                "humidity": "Humidity",
-                "broadband": "Broadband",
-            }
-        )
+        # Unify metric naming across all entries
+        name_map = {
+            "eco2": "eCO2",
+            "co2": "eCO2",
+            "humidity": "Humidity",
+            "broadband": "Broadband",
+            "temperature": "Temperature",
+            "aqi": "AQI",
+        }
+        df["Measure"] = df["Measure"].replace(name_map, regex=True)
 
         aqi_mask = df["Measure"] == "AQI"
         if aqi_mask.any():
@@ -109,10 +100,9 @@ def load_and_clean_data(file_path):
 
 
 def build_plotly_figure(signal_df, measure, height=300):
-    """Constructs Plotly chart for a single metric."""
     unit_label = (
-        signal_df["Unit"].iloc[0]
-        if not signal_df.empty and pd.notna(signal_df["Unit"].iloc[0])
+        signal_df["Unit"].iloc[-1]
+        if not signal_df.empty and pd.notna(signal_df["Unit"].iloc[-1])
         else ""
     )
     y_label = f"{measure} ({unit_label})" if unit_label else measure
@@ -144,9 +134,7 @@ def main():
 
     st.sidebar.header("⚙️ Dashboard Controls")
     live_update = st.sidebar.checkbox(
-        "Enable Live Data Auto-Sync (1 min)",
-        value=True,
-        help="Uncheck to lock the zoom level while analyzing.",
+        "Enable Live Data Auto-Sync (1 min)", value=True
     )
 
     if live_update:
@@ -159,9 +147,7 @@ def main():
     df = load_and_clean_data(LOCAL_CSV_PATH)
 
     if df.empty:
-        st.error(
-            f"No data available at `{LOCAL_CSV_PATH}`. Check SSH credentials or remote file path."
-        )
+        st.error(f"No valid data at `{LOCAL_CSV_PATH}`.")
         st.stop()
 
     st.sidebar.header("🔍 Historical Filters")
@@ -189,18 +175,20 @@ def main():
         f"Last synced timestamp: **{latest_timestamp.strftime('%Y-%m-%d %H:%M:%S')}**"
     )
 
-    # Use data from the latest timestamp block
-    latest_df = df[df["Timestamp"] == latest_timestamp]
+    # Solution: Extract the single latest record PER measure instead of strict overall timestamp match
+    latest_per_measure = (
+        df.sort_values("Timestamp").groupby("Measure").last().reset_index()
+    )
     measures = sorted(filtered_df["Measure"].unique().tolist())
 
     # --- TOP KPI CARDS ---
     kpi_cols = st.columns(min(max(len(measures), 1), 6))
     for idx, measure in enumerate(measures):
-        measure_data = latest_df[latest_df["Measure"] == measure]
+        row = latest_per_measure[latest_per_measure["Measure"] == measure]
         col_target = kpi_cols[idx % len(kpi_cols)]
 
-        if not measure_data.empty:
-            raw_val = measure_data["Value"].values[0]
+        if not row.empty:
+            raw_val = row["Value"].values[0]
 
             if measure == "AQI":
                 status, icon = get_ens160_aqi_status(raw_val)
@@ -211,7 +199,7 @@ def main():
                     delta_color="normal",
                 )
             else:
-                unit = measure_data["Unit"].values[0]
+                unit = row["Unit"].values[0]
                 unit_str = (
                     f" {unit}"
                     if pd.notna(unit) and str(unit).lower() != "nan"
@@ -223,7 +211,7 @@ def main():
 
     st.markdown("---")
 
-    # --- INSPECTION MODE & PLOTS ---
+    # --- INSPECTION MODE & GRID PLOTS ---
     st.sidebar.header("🔬 Inspection Mode")
     inspect_measure = st.sidebar.selectbox(
         "Focus on Single Signal",
