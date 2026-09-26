@@ -11,8 +11,7 @@ CSV_FILE_PATH = os.path.expanduser(
     "~/Documents/GIT_repos/RP2040_BabyMonitoring/tools/rx_save_data/sensor_readings.csv"
 )
 
-# Buffer settings
-BUFFER_SIZE = 30  # Number of complete reading blocks to aggregate before logging
+BUFFER_SIZE = 30  # Average 30 readings (~30s - 1 min) into 1 entry
 readings_buffer = []
 
 
@@ -26,30 +25,51 @@ def initialize_csv(file_path):
 
 
 def parse_sensor_block(block_text):
-    """Parses a raw serial text block into a list of tuples: (Measure, Value, Unit)."""
+    """Robustly parses lines into: (Measure, Value, Unit)."""
     parsed_metrics = []
     lines = block_text.strip().split("\n")
 
     for line in lines:
-        # Match lines formatted as: "Measure: Value Unit" or "AQI: 3 (1-5)"
-        match = re.search(
-            r"([A-Za-z0-9_\s]+):\s*([0-9.]+)\s*([A-Za-z0-9°%/-]*)", line
-        )
-        if match:
-            measure = match.group(1).strip()
-            value = float(match.group(2))
-            unit = match.group(3).strip()
-            parsed_metrics.append((measure, value, unit))
+        line = line.strip()
+        if not line or ":" not in line or "Sensor Readings" in line:
+            continue
+
+        parts = line.split(":", 1)
+        measure_raw = parts[0].strip()
+        rest = parts[1].strip()
+
+        # Extract numeric value (handles integers, floats)
+        val_match = re.search(r"[-+]?\d*\.\d+|\d+", rest)
+        if val_match:
+            try:
+                value = float(val_match.group())
+                # Extract unit if present after the number
+                unit_match = re.search(
+                    r"(?:[0-9.]+\s*)([A-Za-z°%/-]+)", rest
+                )
+                unit = unit_match.group(1).strip() if unit_match else ""
+
+                # Standardize metric names to eliminate mismatching
+                measure = measure_raw
+                if "co2" in measure.lower():
+                    measure = "eCO2"
+                elif "broadband" in measure.lower():
+                    measure = "Broadband"
+                elif "humidity" in measure.lower():
+                    measure = "Humidity"
+
+                parsed_metrics.append((measure, value, unit))
+            except ValueError:
+                continue
 
     return parsed_metrics
 
 
 def flush_and_save_averages(buffer, file_path):
-    """Computes the arithmetic average across the 30 buffered measurements and appends to CSV."""
+    """Computes arithmetic average across buffered measurements and appends to CSV."""
     if not buffer:
         return
 
-    # Group values and units by measure: { 'Temperature': {'values': [...], 'unit': '°C'} }
     aggregated_data = {}
 
     for single_read in buffer:
@@ -57,8 +77,9 @@ def flush_and_save_averages(buffer, file_path):
             if measure not in aggregated_data:
                 aggregated_data[measure] = {"values": [], "unit": unit}
             aggregated_data[measure]["values"].append(value)
+            if unit and not aggregated_data[measure]["unit"]:
+                aggregated_data[measure]["unit"] = unit
 
-    # Use current Pi time for the averaged record
     now = datetime.datetime.now()
     date_str = now.strftime("%Y-%m-%d")
     time_str = now.strftime("%H:%M:%S")
@@ -72,13 +93,12 @@ def flush_and_save_averages(buffer, file_path):
                 [date_str, time_str, measure, avg_val, details["unit"]]
             )
 
-    # Append averaged rows to CSV
     with open(file_path, mode="a", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerows(rows_to_write)
 
     print(
-        f"[{date_str} {time_str}] Successfully averaged and wrote {len(buffer)} readings to CSV."
+        f"[{date_str} {time_str}] Averaged {len(buffer)} samples for {len(rows_to_write)} signals -> saved to CSV."
     )
 
 
@@ -88,10 +108,9 @@ def main():
 
     while True:
         try:
-            print(f"Opening serial connection on {SERIAL_PORT}...")
+            print(f"Connecting to {SERIAL_PORT}...")
             with serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=2) as ser:
-                print("Serial connected! Listening for incoming sensor data...")
-
+                print("Serial connected!")
                 current_block = []
                 recording = False
 
@@ -107,9 +126,6 @@ def main():
 
                             if parsed:
                                 readings_buffer.append(parsed)
-                                print(
-                                    f"Buffered sample {len(readings_buffer)}/{BUFFER_SIZE}"
-                                )
 
                             if len(readings_buffer) >= BUFFER_SIZE:
                                 flush_and_save_averages(
@@ -123,7 +139,7 @@ def main():
                         current_block.append(line)
 
         except (serial.SerialException, OSError) as e:
-            print(f"Serial port disconnected ({e}). Retrying in 3 seconds...")
+            print(f"Serial disconnected ({e}). Retrying in 3 seconds...")
             time.sleep(3)
 
 

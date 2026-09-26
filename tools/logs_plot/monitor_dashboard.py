@@ -6,8 +6,9 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-# File Paths & SCP Configuration
-REMOTE_SCP_PATH = "pi@192.168.0.70:~/Documents/GIT_repos/RP2040_BabyMonitoring/tools/rx_save_data/sensor_readings.csv"
+# File Paths & Remote SSH Configuration
+REMOTE_SSH_USER_HOST = "pi@192.168.0.70"
+REMOTE_FILE_PATH = "/home/pi/Documents/GIT_repos/RP2040_BabyMonitoring/tools/rx_save_data/sensor_readings.csv"
 LOCAL_DIR = "/home/ricardo/Documents/Personal/T_H_LCD_rp2040/tools/logs_plot/"
 LOCAL_CSV_PATH = os.path.join(LOCAL_DIR, "sensor_readings.csv")
 
@@ -18,28 +19,30 @@ st.set_page_config(
 )
 
 
-def fetch_remote_csv():
-    """Executes scp to pull the latest sensor_readings.csv from the remote Raspberry Pi."""
+def sync_remote_csv():
+    """Synchronizes sensor_readings.csv from Pi using rsync."""
     os.makedirs(LOCAL_DIR, exist_ok=True)
+    remote_src = f"{REMOTE_SSH_USER_HOST}:{REMOTE_FILE_PATH}"
+
     try:
         result = subprocess.run(
-            ["scp", REMOTE_SCP_PATH, LOCAL_DIR],
+            ["rsync", "-avz", "--update", remote_src, LOCAL_CSV_PATH],
             capture_output=True,
             text=True,
-            timeout=4,
+            timeout=10,
         )
         if result.returncode == 0:
-            return True, "Successfully synced with Pi."
+            return True, "Successfully synchronized with Pi (rsync)."
         else:
-            return False, f"SCP Error: {result.stderr.strip()}"
+            return False, f"rsync Error: {result.stderr.strip()}"
     except subprocess.TimeoutExpired:
-        return False, "SCP connection timed out."
+        return False, "rsync connection timed out."
     except Exception as e:
-        return False, f"SCP Exception: {str(e)}"
+        return False, f"rsync Exception: {str(e)}"
 
 
 def clean_aqi_value(val_str):
-    """Extracts only numerical digits from strings like '3 (1-5)'."""
+    """Extracts numerical digits from strings like '3 (1-5)'."""
     if pd.isna(val_str):
         return None
     match = re.search(r"(\d+)", str(val_str))
@@ -49,7 +52,7 @@ def clean_aqi_value(val_str):
 
 
 def get_ens160_aqi_status(aqi_val):
-    """Categorizes ENS160 AQI (1-5) according to official datasheet specs."""
+    """Categorizes ENS160 AQI (1-5)."""
     try:
         val = int(aqi_val)
         if val in [1, 2]:
@@ -66,14 +69,27 @@ def get_ens160_aqi_status(aqi_val):
 
 
 def load_and_clean_data(file_path):
-    """Loads CSV and cleans numerical values including AQI parsing."""
+    """Loads CSV, strips whitespace from Measure names, and parses timestamps."""
     if not os.path.exists(file_path):
         return pd.DataFrame()
 
     try:
         df = pd.read_csv(file_path)
-        if df.empty:
-            return df
+        if df.empty or "Measure" not in df.columns:
+            return pd.DataFrame()
+
+        # Crucial Fix: Strip leading/trailing spaces from Measure column
+        df["Measure"] = df["Measure"].astype(str).str.strip()
+
+        # Normalize common measure name variations
+        df["Measure"] = df["Measure"].replace(
+            {
+                "eco2": "eCO2",
+                "eCO2 ": "eCO2",
+                "humidity": "Humidity",
+                "broadband": "Broadband",
+            }
+        )
 
         aqi_mask = df["Measure"] == "AQI"
         if aqi_mask.any():
@@ -82,16 +98,18 @@ def load_and_clean_data(file_path):
             )
 
         df["Timestamp"] = pd.to_datetime(
-            df["Date"] + " " + df["Time"], errors="coerce"
+            df["Date"].astype(str) + " " + df["Time"].astype(str),
+            errors="coerce",
         )
         df["Value"] = pd.to_numeric(df["Value"], errors="coerce")
+
         return df.dropna(subset=["Timestamp", "Value"])
     except Exception:
         return pd.DataFrame()
 
 
 def build_plotly_figure(signal_df, measure, height=300):
-    """Constructs a standardized Plotly chart for a single sensor metric."""
+    """Constructs Plotly chart for a single metric."""
     unit_label = (
         signal_df["Unit"].iloc[0]
         if not signal_df.empty and pd.notna(signal_df["Unit"].iloc[0])
@@ -116,31 +134,27 @@ def build_plotly_figure(signal_df, measure, height=300):
         margin=dict(l=20, r=20, t=40, b=20),
         height=height,
         hovermode="x unified",
-        uirevision=measure,  # Keeps zoom/pan position consistent during reruns
+        uirevision=measure,
     )
     return fig
 
 
 def main():
-    st.title("👶 Emilio's Environmental Sensor Monitor")
+    st.title("👶 RP2040 Environmental Sensor Monitor")
 
-    # --- SIDEBAR CONTROLS ---
     st.sidebar.header("⚙️ Dashboard Controls")
-
-    # Master Toggle to pause live updates while analyzing/zooming
     live_update = st.sidebar.checkbox(
-        "Enable Live Data Auto-Sync (5s)",
+        "Enable Live Data Auto-Sync (1 min)",
         value=True,
-        help="Uncheck this box to freeze live updates while inspecting or zooming into graphs.",
+        help="Uncheck to lock the zoom level while analyzing.",
     )
 
-    # Fetch data on demand or continuously based on toggle
     if live_update:
-        scp_success, scp_msg = fetch_remote_csv()
-        if scp_success:
-            st.sidebar.success(scp_msg)
+        rsync_success, rsync_msg = sync_remote_csv()
+        if rsync_success:
+            st.sidebar.success(rsync_msg)
         else:
-            st.sidebar.warning(scp_msg)
+            st.sidebar.warning(rsync_msg)
 
     df = load_and_clean_data(LOCAL_CSV_PATH)
 
@@ -150,7 +164,6 @@ def main():
         )
         st.stop()
 
-    # --- HISTORICAL FILTER ---
     st.sidebar.header("🔍 Historical Filters")
     min_date = df["Timestamp"].min().date()
     max_date = df["Timestamp"].max().date()
@@ -171,21 +184,23 @@ def main():
     else:
         filtered_df = df
 
-    # --- TOP KPI CARDS ---
     latest_timestamp = df["Timestamp"].max()
     st.caption(
         f"Last synced timestamp: **{latest_timestamp.strftime('%Y-%m-%d %H:%M:%S')}**"
     )
 
+    # Use data from the latest timestamp block
     latest_df = df[df["Timestamp"] == latest_timestamp]
-    measures = sorted(df["Measure"].unique().tolist())
+    measures = sorted(filtered_df["Measure"].unique().tolist())
 
-    kpi_cols = st.columns(min(len(measures), 5))
+    # --- TOP KPI CARDS ---
+    kpi_cols = st.columns(min(max(len(measures), 1), 6))
     for idx, measure in enumerate(measures):
         measure_data = latest_df[latest_df["Measure"] == measure]
+        col_target = kpi_cols[idx % len(kpi_cols)]
+
         if not measure_data.empty:
             raw_val = measure_data["Value"].values[0]
-            col_target = kpi_cols[idx % 5]
 
             if measure == "AQI":
                 status, icon = get_ens160_aqi_status(raw_val)
@@ -198,13 +213,17 @@ def main():
             else:
                 unit = measure_data["Unit"].values[0]
                 unit_str = (
-                    f" {unit}" if pd.notna(unit) and str(unit) != "nan" else ""
+                    f" {unit}"
+                    if pd.notna(unit) and str(unit).lower() != "nan"
+                    else ""
                 )
-                col_target.metric(label=measure, value=f"{raw_val}{unit_str}")
+                col_target.metric(
+                    label=measure, value=f"{raw_val:.2f}{unit_str}"
+                )
 
     st.markdown("---")
 
-    # --- DETAILED INSPECTION MODE ---
+    # --- INSPECTION MODE & PLOTS ---
     st.sidebar.header("🔬 Inspection Mode")
     inspect_measure = st.sidebar.selectbox(
         "Focus on Single Signal",
@@ -214,33 +233,25 @@ def main():
 
     if inspect_measure != "All Overview Grid":
         st.subheader(f"🔍 Focused Inspection View: {inspect_measure}")
-        st.info(
-            "💡 Tip: Uncheck 'Enable Live Data Auto-Sync' in the sidebar to lock the zoom level while analyzing."
-        )
-
         signal_df = filtered_df[filtered_df["Measure"] == inspect_measure]
         fig = build_plotly_figure(signal_df, inspect_measure, height=500)
         st.plotly_chart(
             fig, use_container_width=True, key=f"focus_{inspect_measure}"
         )
-
     else:
-        # --- OVERVIEW 2-COLUMN GRID ---
         st.subheader("📈 Sensor Signal Plots")
         plot_cols = st.columns(2)
 
         for idx, measure in enumerate(measures):
             signal_df = filtered_df[filtered_df["Measure"] == measure]
             fig = build_plotly_figure(signal_df, measure, height=300)
-
             with plot_cols[idx % 2]:
                 st.plotly_chart(
                     fig, use_container_width=True, key=f"grid_{measure}"
                 )
 
-    # Handle loop delay manually to avoid wiping out browser DOM events
     if live_update:
-        time.sleep(5)
+        time.sleep(60)
         st.rerun()
 
 
