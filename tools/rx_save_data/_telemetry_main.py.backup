@@ -1,10 +1,14 @@
 import os
 import re
-import subprocess
 import time
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+
+# --- STREAMLIT SERVER CONFIGURATION (Headless Mode & Network Access) ---
+#st.set_option("server.headless", True)
+#st.set_option("server.address", "0.0.0.0")
+#st.set_option("server.port", 8501)
 
 st.set_page_config(
     page_title="RP2040 Environmental Monitor",
@@ -12,66 +16,13 @@ st.set_page_config(
     layout="wide",
 )
 
-# Configuration & Paths
+# File configuration - directly reads local CSV in the same working directory
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 LOCAL_CSV_PATH = os.path.join(SCRIPT_DIR, "sensor_readings.csv")
-DEVICE_ID = "S4CUZDHMOR955LEY"
-IP_WEBCAM_URL = "http://192.168.0.71:8080"
-
-
-def start_ip_webcam():
-    """Launches IP Webcam main activity via ADB exported launcher intent."""
-    try:
-        # Step 1: Launch main UI Activity
-        subprocess.run(
-            [
-                "adb",
-                "-s",
-                DEVICE_ID,
-                "shell",
-                "monkey",
-                "-p",
-                "com.pas.webcam",
-                "-c",
-                "android.intent.category.LAUNCHER",
-                "1",
-            ],
-            check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        time.sleep(1)
-        # Step 2: Ensure USB port forward stays active
-        subprocess.run(
-            ["adb", "-s", DEVICE_ID, "forward", "tcp:8080", "tcp:8080"],
-            check=True,
-        )
-        return True, "IP Webcam application launched!"
-    except Exception as e:
-        return False, f"Failed to start IP Webcam: {e}"
-
-
-def stop_ip_webcam():
-    """Stops the IP Webcam process on the phone via ADB."""
-    try:
-        subprocess.run(
-            [
-                "adb",
-                "-s",
-                DEVICE_ID,
-                "shell",
-                "am",
-                "force-stop",
-                "com.pas.webcam",
-            ],
-            check=True,
-        )
-        return True, "IP Webcam server disabled."
-    except Exception as e:
-        return False, f"Failed to stop IP Webcam: {e}"
 
 
 def clean_aqi_value(val_str):
+    """Extracts integer value from AQI strings."""
     if pd.isna(val_str):
         return None
     match = re.search(r"(\d+)", str(val_str))
@@ -79,6 +30,7 @@ def clean_aqi_value(val_str):
 
 
 def get_ens160_aqi_status(aqi_val):
+    """Returns status text and color icon based on ENS160 AQI rating."""
     try:
         val = int(aqi_val)
         if val in [1, 2]:
@@ -95,13 +47,16 @@ def get_ens160_aqi_status(aqi_val):
 
 
 def load_and_clean_data(file_path):
+    """Reads and repairs CSV logs directly from local path."""
     if not os.path.exists(file_path):
         return pd.DataFrame()
 
     try:
+        # Step 1: Inspect raw file to check for header existence
         with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
             first_line = f.readline().lower()
 
+        # Step 2: Load dataframe with or without headers dynamically
         if "date" in first_line or "measure" in first_line:
             df = pd.read_csv(file_path)
         else:
@@ -113,10 +68,12 @@ def load_and_clean_data(file_path):
         if df.empty:
             return pd.DataFrame()
 
+        # Step 3: Strip whitespace from text columns
         for col in ["Date", "Time", "Measure"]:
             if col in df.columns:
                 df[col] = df[col].astype(str).str.strip()
 
+        # Step 4: Map truncated/varying measure names to clean canonical names
         def normalize_measure(raw_name):
             n = raw_name.lower()
             if "temp" in n:
@@ -136,14 +93,18 @@ def load_and_clean_data(file_path):
             return raw_name.strip()
 
         df["Measure"] = df["Measure"].apply(normalize_measure)
+
+        # Drop invalid header duplicates or artifacts
         df = df[~df["Measure"].isin(["", "Measure", "nan", "None"])]
 
+        # Clean AQI values
         aqi_mask = df["Measure"] == "AQI"
         if aqi_mask.any():
             df.loc[aqi_mask, "Value"] = df.loc[aqi_mask, "Value"].apply(
                 clean_aqi_value
             )
 
+        # Step 5: Construct valid timestamps
         df["Value"] = pd.to_numeric(df["Value"], errors="coerce")
         time_str = df["Time"].apply(
             lambda t: t if len(t.split(":")) == 3 else f"{t}:00"
@@ -163,6 +124,7 @@ def load_and_clean_data(file_path):
 
 
 def build_plotly_figure(signal_df, measure, height=300):
+    """Generates an interactive Plotly graph for a given sensor signal."""
     unit_label = (
         signal_df["Unit"].iloc[-1]
         if not signal_df.empty and pd.notna(signal_df["Unit"].iloc[-1])
@@ -195,45 +157,6 @@ def build_plotly_figure(signal_df, measure, height=300):
 def main():
     st.title("👶 Emilio's Environmental Sensor Monitor")
 
-    st.sidebar.header("📷 Camera Controls")
-
-    st.sidebar.markdown(
-        f"""
-        <a href="{IP_WEBCAM_URL}" target="_blank" style="text-decoration: none;">
-            <div style="
-                background-color: #262730;
-                color: #FAFAFA;
-                padding: 8px 16px;
-                border-radius: 8px;
-                text-align: center;
-                border: 1px solid #4B4B4B;
-                font-weight: bold;
-                margin-bottom: 10px;">
-                🌐 Open IP Webcam Config UI
-            </div>
-        </a>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    col1, col2 = st.sidebar.columns(2)
-    with col1:
-        if st.button("🟢 Camera ON"):
-            success, msg = start_ip_webcam()
-            if success:
-                st.sidebar.success(msg)
-            else:
-                st.sidebar.error(msg)
-
-    with col2:
-        if st.button("🔴 Camera OFF"):
-            success, msg = stop_ip_webcam()
-            if success:
-                st.sidebar.warning(msg)
-            else:
-                st.sidebar.error(msg)
-
-    st.sidebar.markdown("---")
     st.sidebar.header("⚙️ Dashboard Controls")
     live_update = st.sidebar.checkbox(
         "Enable Live Data Auto-Refresh (1 min)", value=True
@@ -272,6 +195,7 @@ def main():
         f"Last updated timestamp: **{latest_timestamp.strftime('%Y-%m-%d %H:%M:%S')}**"
     )
 
+    # Extract single most recent value per metric
     latest_per_measure = (
         df.sort_values("Timestamp").groupby("Measure").last().reset_index()
     )
